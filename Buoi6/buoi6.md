@@ -69,102 +69,74 @@ public class AppConfig {
 - Hiểu khác biệt lazy vs eager (BeanFactory vs ApplicationContext) hữu ích khi tinh chỉnh thời gian khởi động hoặc tiêu thụ bộ nhớ.
 
 ### Vòng đời của Bean
-```text
-┌─── BEAN CREATION PHASE ───┐
-│ 1. Container Started      │
-│ 2. Instantiation          │
-│ 3. Properties Populated   │
-│ 4. Aware Interfaces       │
-│ 5. Pre-Initialization     │
-│ 6. Initialization         │
-│ 7. Post-Initialization    │
-│ 8. Ready for Use          │
-└──────────────────────────┘
-           ↓
-    (Bean In Use)
-           ↓
-┌─── BEAN DESTRUCTION PHASE ┐
-│ 9. Pre-Destruction        │
-│ 10. Destroy               │
-│ 11. Custom Destruction    │
-│ 12. Destroyed             │
-└──────────────────────────┘
-```
+- Vòng đời bean (Bean Lifecycle) là quá trình mà một đối tượng (bean) được Spring IoC Container khởi tạo, quản lý và cuối cùng là hủy bỏ. Việc hiểu rõ vòng đời này là rất quan trọng để có thể can thiệp vào các giai đoạn, thực thi các logic nghiệp vụ (như khởi tạo tài nguyên, giải phóng kết nối) tại đúng thời điểm.
 
-Tổng quan: Vòng đời (lifecycle) của một bean do Spring quản lý gồm hai phần chính: khởi tạo (creation/initialization) và huỷ (destruction). Ở mỗi giai đoạn, container có thể gọi các callback hoặc hook để cho phép bean khởi tạo tài nguyên, cấu hình thêm, hoặc giải phóng tài nguyên trước khi bị hủy.
+- Vòng đời của một bean được quản lý bởi Spring Container và có thể được chia thành ba giai đoạn chính: **Khởi tạo, Sử dụng,** và **Hủy**.
 
-**1) Giai đoạn khởi tạo (Creation / Initialization)**
-- Đăng ký và đọc định nghĩa bean (BeanDefinition): container nạp các mô tả bean từ cấu hình (annotation, Java config, XML).
-- Instantiation (khởi tạo đối tượng): Spring tạo instance của lớp bean (gọi constructor). Không nên làm nhiều công việc nặng trong constructor.
-- Populate properties (DI): Spring thực hiện thiết lập giá trị cho các dependency thông qua constructor hoặc setter.
-- Aware callbacks: nếu bean implement các interface như `BeanNameAware`, `BeanFactoryAware`, `ApplicationContextAware` thì các phương thức tương ứng (`setBeanName`, `setBeanFactory`, `setApplicationContext`) sẽ được gọi để cung cấp ngữ cảnh cho bean.
-- BeanPostProcessor (pre-initialization): Spring gọi `postProcessBeforeInitialization(...)` của tất cả `BeanPostProcessor` đã đăng ký. Đây là nơi thường dùng để wrap proxy, hoặc chuẩn hóa bean trước khi khởi tạo.
-- Initialization callbacks: Sau bước pre-init, Spring gọi các callback khởi tạo:
-  - phương thức annotated bằng `@PostConstruct` (JSR-250) nếu có;
-  - hoặc `afterPropertiesSet()` nếu bean implement `InitializingBean`;
-  - hoặc một `init-method` do bạn cấu hình trong definition.
-- BeanPostProcessor (post-initialization): Sau các bước khởi tạo, Spring gọi `postProcessAfterInitialization(...)` — đây là nơi thường áp dụng proxy (AOP) hoặc thay thế bean bằng decorator.
-- Bean sẵn sàng để sử dụng (Ready for use).
+#### 1. Giai đoạn Khởi tạo (Initialization Phase)
+Đây là giai đoạn phức tạp nhất, bao gồm nhiều bước, nhưng có hai bước quan trọng nhất mà lập trình viên cần quan tâm:
+##### a. Khởi tạo và Tiêm phụ thuộc (Instantiation & DI)
+- **Instantiation (Khởi tạo đối tượng)**: Container đọc các định nghĩa bean (từ file Java Config, Annotation, hoặc XML) và tạo ra một instance thô của bean bằng cách gọi hàm khởi tạo (constructor) của nó.
 
-**2) Giai đoạn sử dụng (In use)**
-- Bean được gọi/giao dịch theo logic ứng dụng. Với singleton, instance dùng xuyên suốt container; với prototype, container trả về instance mới cho mỗi yêu cầu.
+- **Populate Properties (Tiêm phụ thuộc)**: Sau khi instance được tạo, Spring Container tiến hành "tiêm" (inject) tất cả các phụ thuộc (dependencies) đã được đánh dấu (ví dụ: qua @Autowired, @Value, hoặc constructor injection) vào instance của bean.
 
-**3) Giai đoạn huỷ (Destruction)**
-- Chỉ áp dụng khi container đóng (hoặc khi scope kết thúc với scope có hỗ trợ): container sẽ huỷ các bean đã đăng ký destruction callbacks.
-- Các callback hủy:
-  - `@PreDestroy` (JSR-250) nếu được đánh dấu;
-  - `destroy()` nếu bean implement `DisposableBean`;
-  - `destroy-method` nếu được cấu hình trong definition.
-- Lưu ý quan trọng: Với `prototype` scope, Spring không quản lý vòng đời huỷ — nghĩa là container không gọi các callback destroy cho bean prototype; việc huỷ instance prototype nằm về phía người dùng.
+**Lưu ý quan trọng**: Tại thời điểm này, bean đã tồn tại nhưng chưa sẵn sàng để sử dụng, vì logic khởi tạo tùy chỉnh (ví dụ: kết nối CSDL, đọc file config) có thể chưa được thực thi.
 
-Các interface, annotation và thành phần liên quan (tóm tắt):
-- BeanNameAware / BeanFactoryAware / ApplicationContextAware: nhận thông tin/ngữ cảnh từ container.
-- InitializingBean (afterPropertiesSet) và `@PostConstruct` / init-method: callback khởi tạo.
-- DisposableBean (destroy) và `@PreDestroy` / destroy-method: callback hủy.
-- BeanPostProcessor: cung cấp `postProcessBeforeInitialization` và `postProcessAfterInitialization` để can thiệp vào bean trước/sau init (rất hay dùng cho AOP/proxying).
-- BeanFactoryPostProcessor: chạy trước khi bean instances được tạo — cho phép chỉnh sửa bean definitions (ví dụ PropertyPlaceholderConfigurer).
+##### b. Các Callback Khởi tạo (Initialization Callbacks)
+Sau khi tất cả các phụ thuộc đã được tiêm hoàn tất, Spring cung cấp các "callback" (phương thức gọi lại) để lập trình viên có thể thực thi logic khởi tạo tùy chỉnh. Đây là thời điểm an toàn để chạy các tác vụ chuẩn bị, vì chúng ta có thể chắc chắn rằng tất cả các dependency đã sẵn sàng.
 
-Ví dụ ngắn:
+Spring cung cấp hai cơ chế chính:
+
+- **Annotation `@PostConstruct`:** Đây là phương thức được khuyến nghị. Bất kỳ phương thức public nào được đánh dấu với annotation `@PostConstruct` (chuẩn JSR-250) sẽ được Container gọi **một lần duy nhất** sau khi quá trình tiêm phụ thuộc hoàn tất.
+
+- **Interface InitializingBean:** Bean có thể implement interface InitializingBean và viết logic khởi tạo bên trong phương thức afterPropertiesSet(). Đây là cách làm cũ, gắn kết code của bạn chặt chẽ với Spring API.
+
 ```java
+// Ví dụ sử dụng @PostConstruct (khuyến nghị)
 @Component
-public class MyBean {
+public class DatabaseConnector {
+
+    @Autowired
+    private DataSource dataSource; // Được tiêm vào trước
 
     @PostConstruct
-    public void init() {
-        // logic khởi tạo, kết nối tài nguyên nhẹ
+    public void connect() {
+        // dataSource chắc chắn đã tồn tại (không còn null)
+        // Đây là nơi an toàn để thực thi logic kết nối CSDL.
+        System.out.println("Đã khởi tạo bean, đang kết nối CSDL...");
     }
+}
+```
+##### 2. Giai đoạn Sử dụng (Bean in Use)
+Sau khi hoàn tất giai đoạn khởi tạo (đã chạy qua `@PostConstruct`), bean được xem là đã sẵn sàng. Nó tồn tại trong "ngăn chứa" (Application Context) và được cung cấp cho bất kỳ bean nào khác yêu cầu nó (ví dụ: khi được tiêm qua `@Autowired`).
+
+Đối với các bean có scope là **singleton** (mặc định), chỉ có một instance duy nhất được duy trì và chia sẻ trong suốt thời gian container hoạt động.
+
+##### 3. Giai đoạn Hủy (Destruction Phase)
+Khi Spring Container bị tắt một cách có trật tự (ví dụ: khi ứng dụng đóng lại), nó sẽ quản lý việc hủy bỏ các bean mà nó đã tạo.
+
+**a. Các Callback Hủy (Destruction Callbacks)**
+Trước khi một bean bị xóa hoàn toàn khỏi bộ nhớ, Spring cung cấp các callback để cho phép bean thực thi logic dọn dẹp (cleanup). Đây là điều **bắt buộc** để giải phóng các tài nguyên quan trọng (như đóng kết nối CSDL, đóng file, ngắt kết nối mạng) nhằm tránh rò rỉ tài nguyên (resource leaks).
+
+Tương tự như khởi tạo, có hai cơ chế chính:
+- **Annotation `@PreDestroy`**: Đây là phương thức được khuyến nghị. Bất kỳ phương thức nào được đánh dấu với `@PreDestroy` (chuẩn JSR-250) sẽ được Container gọi một lần duy nhất ngay trước khi bean bị hủy.
+- **Interface DisposableBean**: Bean có thể implement interface `DisposableBean` và viết logic dọn dẹp bên trong phương thức `destroy()`.
+
+```java
+// Ví dụ sử dụng @PreDestroy (khuyến nghị)
+@Component
+public class DatabaseConnector {
+
+    // ... (phần khởi tạo) ...
 
     @PreDestroy
     public void cleanup() {
-        // logic giải phóng tài nguyên
+        // Đây là nơi an toàn để giải phóng tài nguyên
+        System.out.println("Ứng dụng đang tắt, đóng kết nối CSDL...");
+        // ... code đóng kết nối ...
     }
 }
 ```
-
-Hoặc implement interfaces:
-```java
-public class MyBean implements InitializingBean, DisposableBean {
-    @Override
-    public void afterPropertiesSet() {
-        // init
-    }
-
-    @Override
-    public void destroy() {
-        // cleanup
-    }
-}
-```
-
-Lưu ý thực hành và best-practices:
-- Tránh thực hiện công việc nặng (I/O, kết nối mạng nặng) trong constructor; sử dụng `@PostConstruct` hoặc `afterPropertiesSet` để chắc chắn các dependency đã sẵn sàng.
-- Ưu tiên dùng `@PostConstruct` / `@PreDestroy` vì code rõ ràng và độc lập với Spring API; `InitializingBean`/`DisposableBean` là lựa chọn khi cần.
-- Biết rõ khác biệt giữa `BeanPostProcessor` và `BeanFactoryPostProcessor`: `BeanFactoryPostProcessor` thao tác trên bean definitions trước khi instance được tạo; `BeanPostProcessor` thao tác trên instance trước/sau init.
-- Với Spring `ApplicationContext`, các singleton thường được pre-instantiated (tùy cấu hình) — giúp phát hiện lỗi lúc khởi động. Với `BeanFactory` mặc định, bean thường lazy-loaded.
-- Cẩn thận khi sử dụng proxy/AOP: proxy có thể thay đổi kiểu thực tế của bean; nếu bạn cần thực hiện các callback cụ thể, hiểu khi nào proxy được áp dụng (thường bởi BeanPostProcessor sau init).
-- Với `prototype` scope, ứng dụng phải tự lo việc huỷ (ví dụ gọi các method cleanup thủ công hoặc sử dụng `DisposableBean` pattern qua Spring's `DestructionAwareBeanPostProcessor` nếu cần quản lý thêm).
-
-Kết luận ngắn: Hiểu rõ các giai đoạn và các hook (Aware, PostConstruct, BeanPostProcessor, Disposable) giúp bạn thiết kế lifecycle của bean một cách an toàn, tránh rò rỉ tài nguyên, và tích hợp tốt với cơ chế AOP/proxy của Spring.
 ## III. Spring MVC : @Controller, Thymeleaf
 
 ### Controller trong Spring MVC
