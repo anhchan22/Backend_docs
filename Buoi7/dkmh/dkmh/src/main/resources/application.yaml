@@ -1,0 +1,27 @@
+server:
+  port: 8080
+  servlet:
+    context-path:
+
+spring:
+  # --- PHẦN DATABASE CỦA BẠN (Đã đúng) ---
+  datasource:
+    url: "jdbc:sqlserver://localhost:1433;databaseName=identity_service;encrypt=true;trustServerCertificate=true"
+    username: sa
+    password: 123456789
+    driver-class-name: com.microsoft.sqlserver.jdbc.SQLServerDriver
+
+  # --- PHẦN JPA ĐÃ SỬA ĐÚNG CẤU TRÚC ---
+  jpa:
+    # "hibernate" này nằm trực tiếp dưới "jpa"
+    hibernate:
+      # Đây là lệnh tự động tạo bảng
+      ddl-auto: update
+
+    # "properties" này cũng nằm trực tiếp dưới "jpa"
+    properties:
+      hibernate:
+        # Bật show_sql để xem log
+        show_sql: true
+        # Bạn có thể bật dòng này để format SQL cho dễ đọc
+        # format_sql: true
