@@ -9,8 +9,9 @@ import java.util.List;
 
 @Repository
 public interface MonHocRepository extends JpaRepository<MonHoc, String> {
+    List<MonHoc> findAllBy();
 
-    // Dùng @Query để tìm các môn học có mở lớp trong học kỳ
+    //tìm các môn học có mở lớp trong học kỳ
     @Query("SELECT DISTINCT m FROM MonHoc m JOIN m.cacLopHocPhan l WHERE l.hocKy = :hocKy")
     List<MonHoc> findMonHocByHocKy(String hocKy);
 }

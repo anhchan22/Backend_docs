@@ -1,4 +1,4 @@
-package com.qlsv.dkmh.dto;
+package com.qlsv.dkmh.dto.response;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -6,7 +6,7 @@ import java.util.List;
 
 // Dùng để trả về "Phiếu đăng ký" cho client
 @Data
-public class RegistrationSlipDTO {
+public class PhieuDangKyDTO {
     private String maSV;
     private String tenSV;
     private String khoaHoc;

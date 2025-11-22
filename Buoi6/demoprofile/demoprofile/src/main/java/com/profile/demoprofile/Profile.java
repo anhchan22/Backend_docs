@@ -2,10 +2,13 @@ package com.profile.demoprofile;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;
+import lombok.Getter;
+import lombok.Setter;
 
 import java.util.List;
 
-@Data
+@Getter
+@Setter
 @AllArgsConstructor
 public class Profile {
     private String ten, maSV, lop, email, diaChi, tinhTrangMQH;

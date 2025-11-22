@@ -1,4 +1,4 @@
-package com.qlsv.dkmh.dto;
+package com.qlsv.dkmh.dto.response;
 
 import lombok.Data;
 
