@@ -1,13 +1,13 @@
 package com.qlsv.dkmh.service;
 
 import com.qlsv.dkmh.dto.request.DangKyRequest;
-import com.qlsv.dkmh.dto.response.LopHocPhanDTO;
-import com.qlsv.dkmh.dto.response.MonHocDTO;
-import com.qlsv.dkmh.dto.response.PhieuDangKyDTO;
+import com.qlsv.dkmh.dto.response.PhieuDangKyResponse;
 import com.qlsv.dkmh.entity.LopHocPhan;
-import com.qlsv.dkmh.entity.MonHoc;
 import com.qlsv.dkmh.entity.PhieuDangKy;
 import com.qlsv.dkmh.entity.SinhVien;
+import com.qlsv.dkmh.enums.ErrorCode;
+import com.qlsv.dkmh.exception.AppException;
+import com.qlsv.dkmh.mapper.PhieuDangKyMapper;
 import com.qlsv.dkmh.repository.LopHocPhanRepository;
 import com.qlsv.dkmh.repository.MonHocRepository;
 import com.qlsv.dkmh.repository.PhieuDangKyRepository;
@@ -26,99 +26,62 @@ public class RegistrationService {
     @Autowired private MonHocRepository monHocRepo;
     @Autowired private LopHocPhanRepository lopHocPhanRepo;
     @Autowired private PhieuDangKyRepository phieuDangKyRepo;
-
-    private LopHocPhanDTO convertToDTO(LopHocPhan lhp) {
-        return new LopHocPhanDTO(
-                lhp.getMaLop(),
-                lhp.getTenLop(),
-                lhp.getSoSvToiDa(),
-                lhp.getSoSvHienTai(),
-                lhp.getKhungGioHoc(),
-                lhp.getPhongHoc(),
-                lhp.getGiangVien()
-        );
-    }
-
-    public List<LopHocPhanDTO> getLopHocPhanByMonHoc(String maMH, String hocKy) {
-        return lopHocPhanRepo.findByMonHocAndHocKy(maMH, hocKy)
-                .stream()
-                .map(this::convertToDTO)
-                .collect(Collectors.toList());
-    }
-
-    private MonHocDTO convertToDTO(MonHoc mh) {
-        return new MonHocDTO(mh.getMaMH(), mh.getTenMH(), mh.getSoTinChi());
-    }
-
-    public List<MonHocDTO> getAllMonHocDTO() {
-        return monHocRepo.findAllBy().stream()
-                .map(this::convertToDTO)
-                .collect(Collectors.toList());
-    }
-
-    public List<MonHocDTO> getMonHocByHocKyDTO(String hocKy) {
-        return monHocRepo.findMonHocByHocKy(hocKy).stream()
-                .map(this::convertToDTO)
-                .collect(Collectors.toList());
-    }
+    @Autowired
+    private PhieuDangKyMapper phieuDangKyMapper;
 
 
-
-    public PhieuDangKyDTO getPhieuDangKy(String maSV, String hocKy) {
+    public PhieuDangKyResponse getPhieuDangKy(String maSV, String hocKy) {
         SinhVien sv = sinhVienRepo.findById(maSV)
-                .orElseThrow(() -> new RuntimeException("Không tìm thấy sinh viên " + maSV));
+                .orElseThrow(() -> new AppException(ErrorCode.SV_NOT_FOUND));
 
         List<PhieuDangKy> dsDangKy = phieuDangKyRepo.findBySinhVien_MaSVAndHocKy(maSV, hocKy);
 
-        return buildRegistrationSlip(sv, hocKy, dsDangKy);
+        // Sử dụng mapper để chuyển đổi
+        PhieuDangKyResponse response = new PhieuDangKyResponse();
+        response.setMaSV(sv.getMaSV());
+        response.setTenSV(sv.getTen());
+        response.setKhoaHoc(sv.getKhoa());
+        response.setHocKy(hocKy);
+
+        List<PhieuDangKyResponse.MonHocDaDangKyResponse> courses = phieuDangKyMapper.toMonHocDaDangKyResponseList(dsDangKy);
+        response.setDanhSachMHDaDangKy(courses);
+        response.setTongSoTinChi(courses.stream().mapToInt(PhieuDangKyResponse.MonHocDaDangKyResponse::getSoTinChi).sum());
+
+        return response;
     }
 
-
-    // --- Hàm Helper: Xây dựng DTO trả về ---
-    private PhieuDangKyDTO buildRegistrationSlip(SinhVien sv, String hocKy, List<PhieuDangKy> dsDangKy) {
-        PhieuDangKyDTO slip = new PhieuDangKyDTO();
-        slip.setMaSV(sv.getMaSV());
-        slip.setTenSV(sv.getTen());
-        slip.setKhoaHoc(sv.getKhoa());
-        slip.setHocKy(hocKy);
-
-        List<PhieuDangKyDTO.RegisteredCourseDTO> cacMonHocDTO = dsDangKy.stream().map(pdk -> {
-            LopHocPhan lhp = pdk.getLopHocPhan();
-            MonHoc mh = lhp.getMonHoc();
-
-            return new PhieuDangKyDTO.RegisteredCourseDTO(
-                    mh.getMaMH(),
-                    mh.getTenMH(),
-                    mh.getSoTinChi(),
-                    lhp.getKhungGioHoc(),
-                    lhp.getGiangVien(),
-                    lhp.getTenLop(),
-                    lhp.getPhongHoc()
-            );
-        }).collect(Collectors.toList());
-
-        // Tính tổng tín chỉ
-        slip.setTongSoTinChi(cacMonHocDTO.stream().mapToInt(PhieuDangKyDTO.RegisteredCourseDTO::getSoTinChi).sum());
-        slip.setDanhSachDaDangKy(cacMonHocDTO);
-        return slip;
-    }
 
 //Tạo phiếu đăng ký mới cho sinh viên
     @Transactional
-    public PhieuDangKyDTO createPhieuDangKy(DangKyRequest request) {
+    public PhieuDangKyResponse createPhieuDangKy(DangKyRequest request) {
 
         SinhVien sv = sinhVienRepo.findById(request.getMaSV())
-                .orElseThrow(() -> new RuntimeException("Không tìm thấy sinh viên: " + request.getMaSV()));
+                .orElseThrow(() -> new AppException(ErrorCode.SV_NOT_FOUND));
 
-        //Kiểm tra số lượng môn đã đăng ký
-        int soMonDaDangKy = phieuDangKyRepo.countRegistrationsByMaSVAndHocKy(request.getMaSV(), request.getHocKy());
-        if (soMonDaDangKy + request.getDanhSachMaLop().size() > 10) {
-            throw new RuntimeException("Vượt quá số lượng môn học tối đa (10 môn)");
+        //Kiểm tra số lượng tín chỉ đã đăng kýuu
+        List<PhieuDangKy> dsPhieuDangKyCu = phieuDangKyRepo.findBySinhVien_MaSVAndHocKy(request.getMaSV(), request.getHocKy());
+
+        // Tính số tín chỉ mới sẽ đăng ký
+        int soTinChiMoi = 0;
+        for (String maLop : request.getDanhSachMaLop()) {
+            LopHocPhan lhp = lopHocPhanRepo.findById(maLop)
+                    .orElseThrow(() -> new AppException(ErrorCode.LOP_NOT_FOUND));
+            soTinChiMoi += lhp.getMonHoc().getSoTinChi();
+        }
+
+        // Kiểm tra tổng số tín chỉ sau khi đăng ký mới (do sẽ xóa hết cũ rồi đăng ký lại)
+        if (soTinChiMoi < 10) {
+            throw new RuntimeException("Số tín chỉ đăng ký phải tối thiểu 10 tín chỉ (hiện tại: " + soTinChiMoi + " tín chỉ)");
+        }
+        if (soTinChiMoi > 15) {
+            throw new RuntimeException("Số tín chỉ đăng ký không được vượt quá 15 tín chỉ (hiện tại: " + soTinChiMoi + " tín chỉ)");
         }
 
         //Xóa tất cả đăng ký cũ (nếu có)
-        if (soMonDaDangKy > 0) {
-            List<String> danhSachMaLopCu = phieuDangKyRepo.findMaLopByMaSVAndHocKy(request.getMaSV(), request.getHocKy());
+        if (!dsPhieuDangKyCu.isEmpty()) {
+            List<String> danhSachMaLopCu = dsPhieuDangKyCu.stream()
+                    .map(pdk -> pdk.getLopHocPhan().getMaLop())
+                    .toList();
             // Giảm số sinh viên hiện tại của các lớp cũ
             for (String maLop : danhSachMaLopCu) {
                 lopHocPhanRepo.decrementSoSvHienTai(maLop);
@@ -142,10 +105,14 @@ public class RegistrationService {
             }
 
             // Tạo phiếu đăng ký
+            // LƯU Ý: Không dùng mapper.toEntity(request) vì:
+            // 1. Request chỉ có String (maSV, danhSachMaLop) không phải Object
+            // 2. Cần SET THỦ CÔNG sinhVien và lopHocPhan sau khi FETCH từ DB
+            // 3. Request có List<String> nhưng mỗi PhieuDangKy chỉ có 1 lopHocPhan
             PhieuDangKy phieu = new PhieuDangKy();
+            phieu.setHocKy(request.getHocKy());
             phieu.setSinhVien(sv);
             phieu.setLopHocPhan(lhp);
-            phieu.setHocKy(request.getHocKy());
             phieuDangKyRepo.save(phieu);
 
             // Tăng số sinh viên hiện tại
@@ -157,7 +124,7 @@ public class RegistrationService {
 
 //Sửa phiếu đăng ký - Cập nhật danh sách lớp học phần
     @Transactional
-    public PhieuDangKyDTO updatePhieuDangKy(DangKyRequest request) {
+    public PhieuDangKyResponse updatePhieuDangKy(DangKyRequest request) {
         SinhVien sv = sinhVienRepo.findById(request.getMaSV())
                 .orElseThrow(() -> new RuntimeException("Không tìm thấy sinh viên: " + request.getMaSV()));
 
@@ -178,10 +145,35 @@ public class RegistrationService {
                 .filter(maLop -> !danhSachMaLopCu.contains(maLop))
                 .collect(Collectors.toList());
 
-        //Kiểm tra số lượng môn không vượt quá 10
-        int soMonSauUpdate = danhSachMaLopCu.size() - danhSachCanXoa.size() + danhSachCanThem.size();
-        if (soMonSauUpdate > 10) {
-            throw new RuntimeException("Vượt quá số lượng môn học tối đa (10 môn)");
+        // Tính số tín chỉ hiện tại (sau khi xóa)
+        List<String> danhSachConLai = danhSachMaLopCu.stream()
+                .filter(maLop -> !danhSachCanXoa.contains(maLop))
+                .toList();
+
+        int soTinChiHienTai = 0;
+        for (String maLop : danhSachConLai) {
+            LopHocPhan lhp = lopHocPhanRepo.findById(maLop).orElse(null);
+            if (lhp != null) {
+                soTinChiHienTai += lhp.getMonHoc().getSoTinChi();
+            }
+        }
+
+        // Tính số tín chỉ sẽ thêm
+        int soTinChiThem = 0;
+        for (String maLop : danhSachCanThem) {
+            LopHocPhan lhp = lopHocPhanRepo.findById(maLop)
+                    .orElseThrow(() -> new RuntimeException("Không tìm thấy lớp học phần: " + maLop));
+            soTinChiThem += lhp.getMonHoc().getSoTinChi();
+        }
+
+        int tongSoTinChiSauUpdate = soTinChiHienTai + soTinChiThem;
+
+        // Kiểm tra tổng số tín chỉ sau khi update
+        if (tongSoTinChiSauUpdate < 10) {
+            throw new RuntimeException("Số tín chỉ đăng ký phải tối thiểu 10 tín chỉ (sau cập nhật: " + tongSoTinChiSauUpdate + " tín chỉ)");
+        }
+        if (tongSoTinChiSauUpdate > 15) {
+            throw new RuntimeException("Số tín chỉ đăng ký không được vượt quá 15 tín chỉ (sau cập nhật: " + tongSoTinChiSauUpdate + " tín chỉ)");
         }
 
         //XÓA các lớp không còn trong danh sách mới
@@ -199,12 +191,15 @@ public class RegistrationService {
             if (lhp.getSoSvHienTai() >= lhp.getSoSvToiDa()) {
                 throw new RuntimeException("Lớp " + maLop + " đã đầy");
             }
+
             // Tạo phiếu đăng ký mới
+            // Tương tự createPhieuDangKy: phải set thủ công vì cần fetch entity từ DB
             PhieuDangKy phieu = new PhieuDangKy();
+            phieu.setHocKy(request.getHocKy());
             phieu.setSinhVien(sv);
             phieu.setLopHocPhan(lhp);
-            phieu.setHocKy(request.getHocKy());
             phieuDangKyRepo.save(phieu);
+
             // Tăng số sinh viên hiện tại
             lopHocPhanRepo.incrementSoSvHienTai(maLop);
         }

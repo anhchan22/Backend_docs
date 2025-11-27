@@ -2,25 +2,28 @@
 package com.qlsv.dkmh.entity;
 
 import jakarta.persistence.*;
+import lombok.AccessLevel;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import lombok.experimental.FieldDefaults;
 
 @Data
 @NoArgsConstructor
 @Entity
 @Table(name = "phieudangky")
+@FieldDefaults(level = AccessLevel.PRIVATE)
 public class PhieuDangKy {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+     Long id;
 
-    private String hocKy;
+     String hocKy;
 
     @ManyToOne
     @JoinColumn(name = "maSV")
-    private SinhVien sinhVien;
+     SinhVien sinhVien;
 
     @ManyToOne
     @JoinColumn(name = "maLop")
-    private LopHocPhan lopHocPhan;
+     LopHocPhan lopHocPhan;
 }

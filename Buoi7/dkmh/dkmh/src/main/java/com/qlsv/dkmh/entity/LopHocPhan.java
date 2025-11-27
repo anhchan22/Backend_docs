@@ -1,27 +1,31 @@
 package com.qlsv.dkmh.entity;
 
 import jakarta.persistence.*;
+import lombok.AccessLevel;
 import lombok.Data;
+import lombok.experimental.FieldDefaults;
+
 import java.util.Set;
 
 @Data
 @Entity
 @Table(name = "lophocphan")
+@FieldDefaults(level = AccessLevel.PRIVATE)
 public class LopHocPhan {
     @Id
-    private String maLop;
-    private String tenLop;
-    private int soSvToiDa;
-    private int soSvHienTai = 0; // Luôn khởi tạo bằng 0
-    private String phongHoc;
-    private String khungGioHoc; // Ví dụ: "T2(1-3)"
-    private String hocKy; // Ví dụ: "2025-1"
-    private String giangVien; // Thêm theo yêu cầu phiếu đăng ký
+     String maLop;
+     String tenLop;
+     int soSvToiDa;
+     int soSvHienTai = 0;
+     String phongHoc;
+     String khungGioHoc;
+     String hocKy;
+     String giangVien;
 
     @ManyToOne
-    @JoinColumn(name = "maMH") // Khóa ngoại
-    private MonHoc monHoc;
+    @JoinColumn(name = "maMH")
+     MonHoc monHoc;
 
     @OneToMany(mappedBy = "lopHocPhan")
-    private Set<PhieuDangKy> cacPhieuDangKy;
+     Set<PhieuDangKy> cacPhieuDangKy;
 }

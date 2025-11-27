@@ -1,13 +1,17 @@
 package com.qlsv.dkmh.dto.request;
 
+import lombok.AccessLevel;
 import lombok.Data;
+import lombok.experimental.FieldDefaults;
+
 import java.util.List;
 
 // Dùng để nhận yêu cầu POST từ client
 @Data
+@FieldDefaults(level = AccessLevel.PRIVATE)
 public class DangKyRequest {
-    private String maSV;
-    private String hocKy;
+     String maSV;
+     String hocKy;
     // Client gửi lên danh sách mã lớp họ chọn
-    private List<String> danhSachMaLop;
+     List<String> danhSachMaLop;
 }

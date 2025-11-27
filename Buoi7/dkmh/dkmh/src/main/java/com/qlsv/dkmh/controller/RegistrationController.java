@@ -1,16 +1,12 @@
 package com.qlsv.dkmh.controller;
 
 import com.qlsv.dkmh.dto.request.DangKyRequest;
-import com.qlsv.dkmh.dto.response.LopHocPhanDTO;
-import com.qlsv.dkmh.dto.response.MonHocDTO;
-import com.qlsv.dkmh.dto.response.PhieuDangKyDTO;
+import com.qlsv.dkmh.dto.response.ApiResponse;
+import com.qlsv.dkmh.dto.response.PhieuDangKyResponse;
 import com.qlsv.dkmh.service.RegistrationService;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.List;
 
 @RestController
 @RequestMapping("/api/dang-ky")
@@ -19,37 +15,17 @@ public class RegistrationController {
     @Autowired
     private RegistrationService registrationService;
 
-//     Lấy tất cả môn học trong hệ thống.
-    @GetMapping("tat-ca-mon-hoc")
-    public List<MonHocDTO> getAllMonHoc() {
-        return registrationService.getAllMonHocDTO();
-    }
-
-
-//     Lấy tất cả môn học được mở trong học kỳ.
-//     GET http://localhost:8080/api/dang-ky/mon-hoc?hocKy=2025-1
-    @GetMapping("/mon-hoc")
-    public List<MonHocDTO> getMonHocHocKy(@RequestParam String hocKy) {
-        return registrationService.getMonHocByHocKyDTO(hocKy);
-    }
-
-//     Lấy các lớp học phần của 1 môn học trong học kỳ.
-//     GET http://localhost:8080/api/dang-ky/lop-hoc-phan?maMH=IT1110&hocKy=2025-1
-    @GetMapping("/lop-hoc-phan")
-    public ResponseEntity<List<LopHocPhanDTO>> getLopHocPhan(
-            @RequestParam String maMH,
-            @RequestParam String hocKy) {
-        return ResponseEntity.ok(registrationService.getLopHocPhanByMonHoc(maMH, hocKy));
-    }
-
 //     Lấy phiếu đăng ký (kết quả đã lưu) của sinh viên.
 //     GET http://localhost:8080/api/dang-ky/SV001/2025-1
     @GetMapping("/{maSV}/{hocKy}")
-    public ResponseEntity<PhieuDangKyDTO> getPhieuDangKy(
+    public ApiResponse<PhieuDangKyResponse> getPhieuDangKy(
             @PathVariable String maSV,
             @PathVariable String hocKy) {
-        PhieuDangKyDTO phieu = registrationService.getPhieuDangKy(maSV, hocKy);
-        return ResponseEntity.ok(phieu);
+        return ApiResponse.<PhieuDangKyResponse>builder()
+                .code(1000)
+                .message("Lấy phiếu đăng ký thành công")
+                .result(registrationService.getPhieuDangKy(maSV, hocKy))
+                .build();
     }
 
 //     TẠO phiếu đăng ký mới
@@ -60,9 +36,12 @@ public class RegistrationController {
 //        "danhSachMaLop": ["IT1110-01", "IT1120-02"]
 //     }
     @PostMapping
-    public ResponseEntity<PhieuDangKyDTO> createPhieuDangKy(@RequestBody DangKyRequest request) {
-        PhieuDangKyDTO phieu = registrationService.createPhieuDangKy(request);
-        return ResponseEntity.status(HttpStatus.CREATED).body(phieu);
+    public ApiResponse<PhieuDangKyResponse> createPhieuDangKy(@RequestBody DangKyRequest request) {
+        return ApiResponse.<PhieuDangKyResponse>builder()
+                .code(1000)
+                .message("Tạo phiếu đăng ký thành công")
+                .result(registrationService.createPhieuDangKy(request))
+                .build();
     }
 
 //     SỬA phiếu đăng ký (cập nhật danh sách lớp học phần)
@@ -70,32 +49,43 @@ public class RegistrationController {
 //     Body: {
 //        "maSV": "SV001",
 //        "hocKy": "2025-1",
-//        "danhSachMaLop": ["IT1110-01", "IT1130-01", "IT1140-01"]
+//        "danhSachMaLop": ["IT1110.1", "MI1110.1", "PE1010.1"]
 //     }
     @PutMapping
-    public ResponseEntity<?> updatePhieuDangKy(@RequestBody DangKyRequest request) {
-        PhieuDangKyDTO phieu = registrationService.updatePhieuDangKy(request);
-        return ResponseEntity.ok(phieu);
+    public ApiResponse<PhieuDangKyResponse> updatePhieuDangKy(@RequestBody DangKyRequest request) {
+       return ApiResponse.<PhieuDangKyResponse>builder()
+                .code(1000)
+                .message("Cập nhật phiếu đăng ký thành công")
+                .result(registrationService.updatePhieuDangKy(request))
+                .build();
     }
 
 
 //     XÓA toàn bộ phiếu đăng ký của sinh viên trong học kỳ
 //     DELETE http://localhost:8080/api/dang-ky/SV001/2025-1
     @DeleteMapping("/{maSV}/{hocKy}")
-    public String deletePhieuDangKy(
+    public ApiResponse<String> deletePhieuDangKy(
             @PathVariable String maSV,
             @PathVariable String hocKy) {
-        return registrationService.deletePhieuDangKy(maSV, hocKy);
+        return ApiResponse.<String>builder()
+                .code(1000)
+                .message("Xóa phiếu đăng ký thành công")
+                .result(registrationService.deletePhieuDangKy(maSV, hocKy))
+                .build();
     }
 
 
 //     XÓA một môn học cụ thể trong phiếu đăng ký
 //     DELETE http://localhost:8080/api/dang-ky/SV001/2025-1/IT1110-01
     @DeleteMapping("/{maSV}/{hocKy}/{maLop}")
-    public String deleteMonHocFromPhieuDangKy(
+    public ApiResponse<String> deleteMonHocFromPhieuDangKy(
             @PathVariable String maSV,
             @PathVariable String hocKy,
             @PathVariable String maLop) {
-        return registrationService.deleteMonHocFromPhieuDangKy(maSV, maLop, hocKy);
+        return ApiResponse.<String>builder()
+                .code(1000)
+                .message("Xóa môn học khỏi phiếu đăng ký thành công")
+                .result(registrationService.deleteMonHocFromPhieuDangKy(maSV, hocKy, maLop))
+                .build();
     }
 }

@@ -13,16 +13,16 @@ import java.util.List;
 public interface LopHocPhanRepository extends JpaRepository<LopHocPhan, String> {
 
     //Tìm các lớp theo mã môn học va học kỳ
-    @Query("SELECT l FROM LopHocPhan l WHERE l.monHoc.maMH = :maMH AND l.hocKy = :hocKy")
+    @Query("select l from LopHocPhan l where l.monHoc.maMH = :maMH and l.hocKy = :hocKy")
     List<LopHocPhan> findByMonHocAndHocKy(@Param("maMH") String maMH, @Param("hocKy") String hocKy);
 
     //Tăng số sinh viên hiện tại
     @Modifying
-    @Query(value = "UPDATE lophocphan SET so_sv_hien_tai = so_sv_hien_tai + 1 WHERE ma_lop = :maLop", nativeQuery = true)
+    @Query(value = "update lophocphan set so_sv_hien_tai = so_sv_hien_tai + 1 where ma_lop = :maLop", nativeQuery = true)
     void incrementSoSvHienTai(@Param("maLop") String maLop);
 
     //Giảm số sinh viên hiện tại
     @Modifying
-    @Query(value = "UPDATE lophocphan SET so_sv_hien_tai = so_sv_hien_tai - 1 WHERE ma_lop = :maLop AND so_sv_hien_tai > 0", nativeQuery = true)
+    @Query(value = "update lophocphan set so_sv_hien_tai = so_sv_hien_tai - 1 where ma_lop = :maLop and so_sv_hien_tai > 0", nativeQuery = true)
     void decrementSoSvHienTai(@Param("maLop") String maLop);
 }

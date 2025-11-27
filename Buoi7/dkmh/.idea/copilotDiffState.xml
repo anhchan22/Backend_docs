@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="CopilotDiffPersistence">
+    <option name="pendingDiffs">
+      <map>
+        <entry key="$PROJECT_DIR$/rebuild.bat">
+          <value>
+            <PendingDiffInfo>
+              <option name="filePath" value="$PROJECT_DIR$/rebuild.bat" />
+              <option name="updatedContent" value="@echo off&#10;echo ===================================&#10;echo  REBUILD PROJECT WITH LOMBOK&#10;echo ===================================&#10;echo.&#10;&#10;cd /d D:\AnhTran\PROPTIT\Backend_docs\Buoi7\dkmh\dkmh&#10;&#10;echo [1/3] Cleaning project...&#10;call mvnw.cmd clean&#10;if %errorlevel% neq 0 (&#10;    echo ERROR: Clean failed!&#10;    pause&#10;    exit /b %errorlevel%&#10;)&#10;&#10;echo.&#10;echo [2/3] Compiling project...&#10;call mvnw.cmd compile&#10;if %errorlevel% neq 0 (&#10;    echo ERROR: Compile failed!&#10;    pause&#10;    exit /b %errorlevel%&#10;)&#10;&#10;echo.&#10;echo [3/3] Checking generated classes...&#10;if exist &quot;target\classes\com\qlsv\dkmh\dto\request\LopHocPhanRequest.class&quot; (&#10;    echo SUCCESS: LopHocPhanRequest.class generated!&#10;) else (&#10;    echo WARNING: LopHocPhanRequest.class not found!&#10;)&#10;&#10;echo.&#10;echo ===================================&#10;echo  BUILD COMPLETE!&#10;echo ===================================&#10;echo.&#10;echo Check target\classes folder for generated .class files&#10;pause&#10;" />
+            </PendingDiffInfo>
+          </value>
+        </entry>
+      </map>
+    </option>
+  </component>
+</project>

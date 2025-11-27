@@ -20,30 +20,30 @@ public interface PhieuDangKyRepository extends JpaRepository<PhieuDangKy, Long> 
 
 
     @Modifying
-    @Query("DELETE FROM PhieuDangKy p WHERE p.sinhVien = :sinhVien AND p.hocKy = :hocKy")
+    @Query("delete from PhieuDangKy p where p.sinhVien = :sinhVien and p.hocKy = :hocKy")
     void deleteBySinhVienAndHocKy(SinhVien sinhVien, String hocKy);
 
     //Kiểm tra xem sinh viên đã đăng ký lớp học phần chưa
     boolean existsBySinhVienAndLopHocPhanAndHocKy(SinhVien sinhVien, LopHocPhan lopHocPhan, String hocKy);
 
     //Tìm phiếu đăng ký cụ thể của sinh viên cho một lớp học phần
-    @Query("SELECT p FROM PhieuDangKy p WHERE p.sinhVien.maSV = :maSV AND p.lopHocPhan.maLop = :maLop AND p.hocKy = :hocKy")
+    @Query("select p from PhieuDangKy p where p.sinhVien.maSV = :maSV and p.lopHocPhan.maLop = :maLop and p.hocKy = :hocKy")
     Optional<PhieuDangKy> findByMaSVAndMaLopAndHocKy(@Param("maSV") String maSV,
                                                       @Param("maLop") String maLop,
                                                       @Param("hocKy") String hocKy);
 
     //Đếm số lượng đăng ký của sinh viên trong học kỳ
-    @Query(value = "SELECT COUNT(*) FROM phieudangky WHERE masv = :maSV AND hoc_ky = :hocKy", nativeQuery = true)
+    @Query(value = "select count(*) from phieudangky where masv = :maSV and hoc_ky = :hocKy", nativeQuery = true)
     int countRegistrationsByMaSVAndHocKy(@Param("maSV") String maSV, @Param("hocKy") String hocKy);
 
     //Xóa một phiếu đăng ký cụ thể
     @Modifying
-    @Query("DELETE FROM PhieuDangKy p WHERE p.sinhVien.maSV = :maSV AND p.lopHocPhan.maLop = :maLop AND p.hocKy = :hocKy")
+    @Query("delete from PhieuDangKy p where p.sinhVien.maSV = :maSV and p.lopHocPhan.maLop = :maLop and p.hocKy = :hocKy")
     void deleteByMaSVAndMaLopAndHocKy(@Param("maSV") String maSV,
                                       @Param("maLop") String maLop,
                                       @Param("hocKy") String hocKy);
 
     //Lấy danh sách mã lớp đã đăng ký của sinh viên
-    @Query(value = "SELECT ma_lop FROM phieudangky WHERE masv = :maSV AND hoc_ky = :hocKy", nativeQuery = true)
+    @Query(value = "select ma_lop from phieudangky where masv = :maSV and hoc_ky = :hocKy", nativeQuery = true)
     List<String> findMaLopByMaSVAndHocKy(@Param("maSV") String maSV, @Param("hocKy") String hocKy);
 }
