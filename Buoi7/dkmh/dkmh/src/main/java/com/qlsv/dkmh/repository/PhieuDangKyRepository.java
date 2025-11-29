@@ -18,7 +18,7 @@ public interface PhieuDangKyRepository extends JpaRepository<PhieuDangKy, Long> 
     //Tìm tất cả đăng ký của 1 sinh viên trong 1 học kỳ
     List<PhieuDangKy> findBySinhVien_MaSVAndHocKy(String maSV, String hocKy);
 
-
+    //Xóa tất cả đăng ký của sinh viên trong học kỳ - derived delete query
     @Modifying
     @Query("delete from PhieuDangKy p where p.sinhVien = :sinhVien and p.hocKy = :hocKy")
     void deleteBySinhVienAndHocKy(SinhVien sinhVien, String hocKy);

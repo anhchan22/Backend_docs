@@ -1,7 +1,9 @@
 package com.qlsv.dkmh.controller;
 
-import com.qlsv.dkmh.dto.request.DangKyRequest;
+import com.qlsv.dkmh.dto.request.NopPhieuDangKyRequest;
+import com.qlsv.dkmh.dto.request.ThemLopVaoDraftRequest;
 import com.qlsv.dkmh.dto.response.ApiResponse;
+import com.qlsv.dkmh.dto.response.DraftResponse;
 import com.qlsv.dkmh.dto.response.PhieuDangKyResponse;
 import com.qlsv.dkmh.service.RegistrationService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -28,38 +30,6 @@ public class RegistrationController {
                 .build();
     }
 
-//     TẠO phiếu đăng ký mới
-//     POST http://localhost:8080/api/dang-ky
-//     Body: {
-//        "maSV": "SV001",
-//        "hocKy": "2025-1",
-//        "danhSachMaLop": ["IT1110-01", "IT1120-02"]
-//     }
-    @PostMapping
-    public ApiResponse<PhieuDangKyResponse> createPhieuDangKy(@RequestBody DangKyRequest request) {
-        return ApiResponse.<PhieuDangKyResponse>builder()
-                .code(1000)
-                .message("Tạo phiếu đăng ký thành công")
-                .result(registrationService.createPhieuDangKy(request))
-                .build();
-    }
-
-//     SỬA phiếu đăng ký (cập nhật danh sách lớp học phần)
-//     PUT http://localhost:8080/api/dang-ky
-//     Body: {
-//        "maSV": "SV001",
-//        "hocKy": "2025-1",
-//        "danhSachMaLop": ["IT1110.1", "MI1110.1", "PE1010.1"]
-//     }
-    @PutMapping
-    public ApiResponse<PhieuDangKyResponse> updatePhieuDangKy(@RequestBody DangKyRequest request) {
-       return ApiResponse.<PhieuDangKyResponse>builder()
-                .code(1000)
-                .message("Cập nhật phiếu đăng ký thành công")
-                .result(registrationService.updatePhieuDangKy(request))
-                .build();
-    }
-
 
 //     XÓA toàn bộ phiếu đăng ký của sinh viên trong học kỳ
 //     DELETE http://localhost:8080/api/dang-ky/SV001/2025-1
@@ -75,17 +45,64 @@ public class RegistrationController {
     }
 
 
-//     XÓA một môn học cụ thể trong phiếu đăng ký
-//     DELETE http://localhost:8080/api/dang-ky/SV001/2025-1/IT1110-01
-    @DeleteMapping("/{maSV}/{hocKy}/{maLop}")
-    public ApiResponse<String> deleteMonHocFromPhieuDangKy(
+
+//     LẤY draft hiện tại (danh sách lớp đã chọn nhưng chưa nộp)
+//     GET http://localhost:8080/api/dang-ky/draft/SV001/2025-1
+    @GetMapping("/draft/{maSV}/{hocKy}")
+    public ApiResponse<DraftResponse> getDraft(
             @PathVariable String maSV,
-            @PathVariable String hocKy,
-            @PathVariable String maLop) {
-        return ApiResponse.<String>builder()
+            @PathVariable String hocKy) {
+        return ApiResponse.<DraftResponse>builder()
                 .code(1000)
-                .message("Xóa môn học khỏi phiếu đăng ký thành công")
-                .result(registrationService.deleteMonHocFromPhieuDangKy(maSV, hocKy, maLop))
+                .message("Lấy draft thành công")
+                .result(registrationService.getDraft(maSV, hocKy))
+                .build();
+    }
+
+//     THÊM một lớp học phần vào draft (check xung đột thời gian)
+//     POST http://localhost:8080/api/dang-ky/draft/add
+//     Body: {
+//        "maSV": "SV001",
+//        "hocKy": "2025-1",
+//        "maLop": "IT1110-01"
+//     }
+    @PostMapping("/draft/add")
+    public ApiResponse<DraftResponse> addToDraft(@RequestBody ThemLopVaoDraftRequest request) {
+        return ApiResponse.<DraftResponse>builder()
+                .code(1000)
+                .message("Thêm lớp vào draft thành công")
+                .result(registrationService.addToDraft(request.getMaSV(), request.getHocKy(), request.getMaLop()))
+                .build();
+    }
+
+//     XÓA một lớp khỏi draft
+//     DELETE http://localhost:8080/api/dang-ky/draft/remove
+//     Body: {
+//        "maSV": "SV001",
+//        "hocKy": "2025-1",
+//        "maLop": "IT1110-01"
+//     }
+    @DeleteMapping("/draft/remove")
+    public ApiResponse<DraftResponse> removeFromDraft(@RequestBody ThemLopVaoDraftRequest request) {
+        return ApiResponse.<DraftResponse>builder()
+                .code(1000)
+                .message("Xóa lớp khỏi draft thành công")
+                .result(registrationService.removeFromDraft(request.getMaSV(), request.getHocKy(), request.getMaLop()))
+                .build();
+    }
+
+//     NỘP phiếu đăng ký (lưu draft vào database, check tín chỉ 10-15)
+//     POST http://localhost:8080/api/dang-ky/draft/submit
+//     Body: {
+//        "maSV": "SV001",
+//        "hocKy": "2025-1"
+//     }
+    @PostMapping("/draft/submit")
+    public ApiResponse<PhieuDangKyResponse> submitDraft(@RequestBody NopPhieuDangKyRequest request) {
+        return ApiResponse.<PhieuDangKyResponse>builder()
+                .code(1000)
+                .message("Nộp phiếu đăng ký thành công")
+                .result(registrationService.submitDraft(request))
                 .build();
     }
 }

@@ -10,6 +10,9 @@ import com.qlsv.dkmh.mapper.LopHocPhanMapper;
 import com.qlsv.dkmh.repository.LopHocPhanRepository;
 import com.qlsv.dkmh.repository.MonHocRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -33,16 +36,20 @@ public class LopHocPhanService {
     }
 
     public LopHocPhanResponse createLopHocPhan(LopHocPhanRequest request) {
-        // Tìm môn học theo mã
         MonHoc monHoc = monHocRepository.findById(request.getMaMH())
                 .orElseThrow(() -> new AppException(ErrorCode.MONHOC_NOT_FOUND));
 
-        // Kiểm tra xem mã lớp đã tồn tại chưa
         if (lopHocPhanRepository.existsById(request.getMaLop())) {
             throw new AppException(ErrorCode.MALOP_EXISTS);
         }
 
         LopHocPhan lopHocPhan = lopHocPhanMapper.toEntity(request);
         return lopHocPhanMapper.toResponse(lopHocPhanRepository.save(lopHocPhan));
+    }
+
+    public Page<LopHocPhanResponse> getAllLopHocPhanSortedByMaMHDesc(int page, int size) {
+        Pageable pageable = PageRequest.of(page, size);
+        Page<LopHocPhan> lopHocPhanPage = lopHocPhanRepository.findAllByOrderByMonHoc_MaMHDesc(pageable);
+        return lopHocPhanPage.map(lopHocPhanMapper::toResponse);
     }
 }

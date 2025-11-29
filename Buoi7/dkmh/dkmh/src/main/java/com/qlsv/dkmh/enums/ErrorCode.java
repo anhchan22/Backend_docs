@@ -19,7 +19,7 @@ public enum ErrorCode {
     EXCEED_MAX_CREDITS(1008, "Vượt quá số tín chỉ cho phép"),
     SCHEDULE_CONFLICT(1010, "Xung đột lịch học"),
     INVALID_MAMONHOC(1011, "Mã môn học phải tối thiểu 6 ký tự"),
-    INVALID_SOSV_TOIDA(1012, "Số sinh viên không vượt quá 50"),
+    INVALID_SOSV_TOIDA(1012, "Lớp học đã đầy"),
     MALOP_EXISTS(1009, "Lớp học phần đã tồn tại");
 
     final int code;
