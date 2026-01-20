@@ -20,7 +20,9 @@ public enum ErrorCode {
     SCHEDULE_CONFLICT(1010, "Xung đột lịch học"),
     INVALID_MAMONHOC(1011, "Mã môn học phải tối thiểu 6 ký tự"),
     INVALID_SOSV_TOIDA(1012, "Lớp học đã đầy"),
-    MALOP_EXISTS(1009, "Lớp học phần đã tồn tại");
+    MALOP_EXISTS(1009, "Lớp học phần đã tồn tại"),
+    USER_EXISTED(1013, "User existed"),
+    UNAUTHENTICATED(1014, "Unauthenticated"),;
 
     final int code;
     final String message;

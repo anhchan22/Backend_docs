@@ -12,10 +12,10 @@ public class MonHocResponse {
      String tenMH;
      int soTinChi;
 
-    public MonHocResponse(String maMH, String tenMH, int soTinChi) {
-        this.maMH = maMH;
-        this.tenMH = tenMH;
-        this.soTinChi = soTinChi;
-    }
+//    public MonHocResponse(String maMH, String tenMH, int soTinChi) {
+//        this.maMH = maMH;
+//        this.tenMH = tenMH;
+//        this.soTinChi = soTinChi;
+//    }
 }
 
