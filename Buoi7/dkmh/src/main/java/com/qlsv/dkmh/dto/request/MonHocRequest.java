@@ -1,23 +1,18 @@
-package com.qlsv.dkmh.entity;
+package com.qlsv.dkmh.dto.request;
 
-import jakarta.persistence.*;
+
+import com.qlsv.dkmh.dto.response.MonHocResponse;
+import com.qlsv.dkmh.entity.MonHoc;
 import jakarta.validation.constraints.Size;
 import lombok.AccessLevel;
 import lombok.Data;
 import lombok.experimental.FieldDefaults;
 
-import java.util.Set;
-
 @Data
-@Entity
-@Table(name = "monhoc")
 @FieldDefaults(level = AccessLevel.PRIVATE)
-public class MonHoc {
-    @Id
+public class MonHocRequest {
+    @Size(min=6, message="INVALID_MAMONHOC")
      String maMH;
      String tenMH;
      int soTinChi;
-
-    @OneToMany(mappedBy = "monHoc")
-     Set<LopHocPhan> cacLopHocPhan;
 }

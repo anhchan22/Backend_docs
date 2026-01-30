@@ -8,7 +8,7 @@ import org.springframework.stereotype.Component;
 
 @Generated(
     value = "org.mapstruct.ap.MappingProcessor",
-    date = "2025-11-27T21:55:43+0700",
+    date = "2026-01-30T15:57:48+0700",
     comments = "version: 1.5.5.Final, compiler: javac, environment: Java 23.0.1 (Oracle Corporation)"
 )
 @Component
@@ -35,15 +35,11 @@ public class MonHocMapperImpl implements MonHocMapper {
             return null;
         }
 
-        String maMH = null;
-        String tenMH = null;
-        int soTinChi = 0;
+        MonHocResponse monHocResponse = new MonHocResponse();
 
-        maMH = monHoc.getMaMH();
-        tenMH = monHoc.getTenMH();
-        soTinChi = monHoc.getSoTinChi();
-
-        MonHocResponse monHocResponse = new MonHocResponse( maMH, tenMH, soTinChi );
+        monHocResponse.setMaMH( monHoc.getMaMH() );
+        monHocResponse.setTenMH( monHoc.getTenMH() );
+        monHocResponse.setSoTinChi( monHoc.getSoTinChi() );
 
         return monHocResponse;
     }

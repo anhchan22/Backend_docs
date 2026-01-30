@@ -8,6 +8,7 @@ import com.qlsv.dkmh.entity.PhieuDangKy;
 import com.qlsv.dkmh.entity.SinhVien;
 import com.qlsv.dkmh.enums.ErrorCode;
 import com.qlsv.dkmh.exception.AppException;
+import com.qlsv.dkmh.mapper.DraftMapper;
 import com.qlsv.dkmh.mapper.PhieuDangKyMapper;
 import com.qlsv.dkmh.repository.LopHocPhanRepository;
 import com.qlsv.dkmh.repository.PhieuDangKyRepository;
@@ -25,6 +26,7 @@ public class RegistrationService {
     @Autowired private LopHocPhanRepository lopHocPhanRepo;
     @Autowired private PhieuDangKyRepository phieuDangKyRepo;
     @Autowired private PhieuDangKyMapper phieuDangKyMapper;
+    @Autowired private DraftMapper draftMapper;
 
 
     public PhieuDangKyResponse getPhieuDangKy(String maSV, String hocKy) {
@@ -33,10 +35,7 @@ public class RegistrationService {
 
         List<PhieuDangKy> dsDangKy = phieuDangKyRepo.findBySinhVien_MaSVAndHocKy(maSV, hocKy);
 
-        PhieuDangKyResponse response = new PhieuDangKyResponse();
-        response.setMaSV(sv.getMaSV());
-        response.setTenSV(sv.getTen());
-        response.setKhoaHoc(sv.getKhoa());
+        PhieuDangKyResponse response = phieuDangKyMapper.toPhieuDangKyResponseBase(sv);
         response.setHocKy(hocKy);
 
         List<PhieuDangKyResponse.MonHocDaDangKyResponse> courses = phieuDangKyMapper.toMonHocDaDangKyResponseList(dsDangKy);
@@ -54,7 +53,7 @@ public class RegistrationService {
         List<String> danhSachMaLop = phieuDangKyRepo.findMaLopByMaSVAndHocKy(maSV, hocKy);
 
         if (danhSachMaLop.isEmpty()) {
-            throw new RuntimeException("Không tìm thấy phiếu đăng ký để xóa");
+            throw new AppException(ErrorCode.PHIEU_DANGKY_NOT_FOUND);
         }
         for (String maLop : danhSachMaLop) {
             lopHocPhanRepo.decrementSoSvHienTai(maLop);
@@ -78,27 +77,21 @@ public class RegistrationService {
         response.setMaSV(maSV);
         response.setHocKy(hocKy);
 
-        int tongTinChi = 0;
-        List<DraftResponse.LopHocPhanTrongDraft> danhSachLop = new ArrayList<>();
-
+        // Lấy danh sách lớp học phần từ database
+        List<LopHocPhan> danhSachLopHocPhan = new ArrayList<>();
         for (String maLop : danhSachMaLop) {
-            LopHocPhan lhp = lopHocPhanRepo.findById(maLop).orElse(null);
-            if (lhp != null && lhp.getMonHoc() != null) {
-                DraftResponse.LopHocPhanTrongDraft item = new DraftResponse.LopHocPhanTrongDraft();
-                item.setMaLop(lhp.getMaLop());
-                item.setTenLop(lhp.getTenLop());
-                item.setMaMH(lhp.getMonHoc().getMaMH());
-                item.setTenMH(lhp.getMonHoc().getTenMH());
-                item.setSoTinChi(lhp.getMonHoc().getSoTinChi());
-                item.setKhungGioHoc(lhp.getKhungGioHoc());
-                item.setGiangVien(lhp.getGiangVien());
-                item.setPhongHoc(lhp.getPhongHoc());
-                danhSachLop.add(item);
-                tongTinChi += lhp.getMonHoc().getSoTinChi();
-            }
+            lopHocPhanRepo.findById(maLop)
+                    .filter(lhp -> lhp.getMonHoc() != null)
+                    .ifPresent(danhSachLopHocPhan::add);
         }
 
+        // Dùng mapper để convert sang DTO
+        List<DraftResponse.LopHocPhanTrongDraft> danhSachLop = draftMapper.toLopHocPhanTrongDraftList(danhSachLopHocPhan);
         response.setDanhSachLopDaChon(danhSachLop);
+
+        int tongTinChi = danhSachLop.stream()
+                .mapToInt(DraftResponse.LopHocPhanTrongDraft::getSoTinChi)
+                .sum();
         response.setTongSoTinChi(tongTinChi);
         response.setDuDieuKienNop(tongTinChi >= 10 && tongTinChi <= 15);
 
@@ -111,20 +104,20 @@ public class RegistrationService {
                 .orElseThrow(() -> new AppException(ErrorCode.LOP_NOT_FOUND));
 
         if (lopMoi.getSoSvHienTai() >= lopMoi.getSoSvToiDa()) {
-            throw new AppException(ErrorCode. INVALID_SOSV_TOIDA);
+            throw new AppException(ErrorCode.INVALID_SOSV_TOIDA);
         }
 
         String key = getDraftKey(maSV, hocKy);
         List<String> danhSachMaLop = draftStorage.getOrDefault(key, new ArrayList<>());
 
         if (danhSachMaLop.contains(maLop)) {
-            throw new RuntimeException("Lớp " + maLop + " đã có trong danh sách chọn");
+            throw new AppException(ErrorCode.LOP_EXISTED_IN_DRAFT);
         }
 
         for (String maLopDaChon : danhSachMaLop) {
             LopHocPhan lopDaChon = lopHocPhanRepo.findById(maLopDaChon).orElse(null);
             if (lopDaChon != null && isScheduleConflict(lopDaChon, lopMoi)) {
-                throw new RuntimeException("Xung đột thời khóa biểu với lớp " + maLopDaChon);
+                throw new AppException(ErrorCode.SCHEDULE_CONFLICT);
             }
         }
 
@@ -142,7 +135,7 @@ public class RegistrationService {
         List<String> danhSachMaLop = draftStorage.getOrDefault(key, new ArrayList<>());
 
         if (!danhSachMaLop.remove(maLop)) {
-            throw new RuntimeException("Lớp " + maLop + " không có trong danh sách chọn");
+            throw new AppException(ErrorCode.LOP_NOT_FOUND_IN_DRAFT);
         }
 
         lopHocPhanRepo.decrementSoSvHienTai(maLop);
@@ -168,21 +161,21 @@ public class RegistrationService {
         List<String> danhSachMaLop = draftStorage.get(key);
 
         if (danhSachMaLop == null || danhSachMaLop.isEmpty()) {
-            throw new RuntimeException("Không có lớp nào trong draft để nộp");
+            throw new AppException(ErrorCode.DRAFT_EMPTY);
         }
 
         int tongSoTinChi = 0;
         for (String maLop : danhSachMaLop) {
             LopHocPhan lhp = lopHocPhanRepo.findById(maLop)
-                    .orElseThrow(() -> new RuntimeException("Không tìm thấy lớp học phần: " + maLop));
+                    .orElseThrow(() -> new AppException(ErrorCode.LOP_NOT_FOUND));
             tongSoTinChi += lhp.getMonHoc().getSoTinChi();
         }
 
         if (tongSoTinChi < 10) {
-            throw new RuntimeException("Số tín chỉ đăng ký phải tối thiểu 10 tín chỉ (hiện tại: " + tongSoTinChi + " tín chỉ)");
+            throw new AppException(ErrorCode.INVALID_MIN_CREDITS);
         }
         if (tongSoTinChi > 15) {
-            throw new RuntimeException("Số tín chỉ đăng ký không được vượt quá 15 tín chỉ (hiện tại: " + tongSoTinChi + " tín chỉ)");
+            throw new AppException(ErrorCode.INVALID_MAX_CREDITS);
         }
 
         List<PhieuDangKy> dsPhieuDangKyCu = phieuDangKyRepo.findBySinhVien_MaSVAndHocKy(maSV, hocKy);
@@ -192,7 +185,7 @@ public class RegistrationService {
 
         for (String maLop : danhSachMaLop) {
             LopHocPhan lhp = lopHocPhanRepo.findById(maLop)
-                    .orElseThrow(() -> new RuntimeException("Không tìm thấy lớp học phần: " + maLop));
+                    .orElseThrow(() -> new AppException(ErrorCode.LOP_NOT_FOUND));
 
             PhieuDangKy phieu = new PhieuDangKy();
             phieu.setHocKy(hocKy);

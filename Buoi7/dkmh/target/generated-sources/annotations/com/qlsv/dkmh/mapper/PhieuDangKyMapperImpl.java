@@ -1,10 +1,10 @@
 package com.qlsv.dkmh.mapper;
 
-import com.qlsv.dkmh.dto.request.DangKyRequest;
 import com.qlsv.dkmh.dto.response.PhieuDangKyResponse;
 import com.qlsv.dkmh.entity.LopHocPhan;
 import com.qlsv.dkmh.entity.MonHoc;
 import com.qlsv.dkmh.entity.PhieuDangKy;
+import com.qlsv.dkmh.entity.SinhVien;
 import java.util.ArrayList;
 import java.util.List;
 import javax.annotation.processing.Generated;
@@ -12,65 +12,58 @@ import org.springframework.stereotype.Component;
 
 @Generated(
     value = "org.mapstruct.ap.MappingProcessor",
-    date = "2025-11-27T21:55:43+0700",
+    date = "2026-01-30T17:12:00+0700",
     comments = "version: 1.5.5.Final, compiler: javac, environment: Java 23.0.1 (Oracle Corporation)"
 )
 @Component
 public class PhieuDangKyMapperImpl implements PhieuDangKyMapper {
 
     @Override
-    public PhieuDangKyResponse.RegisteredCourseDTO toRegisteredCourseDTO(PhieuDangKy phieuDangKy) {
+    public PhieuDangKyResponse.MonHocDaDangKyResponse toMonHocDaDangKyResponse(PhieuDangKy phieuDangKy) {
         if ( phieuDangKy == null ) {
             return null;
         }
 
-        PhieuDangKyResponse.RegisteredCourseDTO registeredCourseDTO = new PhieuDangKyResponse.RegisteredCourseDTO();
+        PhieuDangKyResponse.MonHocDaDangKyResponse monHocDaDangKyResponse = new PhieuDangKyResponse.MonHocDaDangKyResponse();
 
-        registeredCourseDTO.setMaMH( phieuDangKyLopHocPhanMonHocMaMH( phieuDangKy ) );
-        registeredCourseDTO.setTenMH( phieuDangKyLopHocPhanMonHocTenMH( phieuDangKy ) );
-        registeredCourseDTO.setSoTinChi( phieuDangKyLopHocPhanMonHocSoTinChi( phieuDangKy ) );
-        registeredCourseDTO.setGioHoc( phieuDangKyLopHocPhanKhungGioHoc( phieuDangKy ) );
-        registeredCourseDTO.setGiangVien( phieuDangKyLopHocPhanGiangVien( phieuDangKy ) );
-        registeredCourseDTO.setTenLop( phieuDangKyLopHocPhanTenLop( phieuDangKy ) );
-        registeredCourseDTO.setPhongHoc( phieuDangKyLopHocPhanPhongHoc( phieuDangKy ) );
+        monHocDaDangKyResponse.setMaMH( phieuDangKyLopHocPhanMonHocMaMH( phieuDangKy ) );
+        monHocDaDangKyResponse.setTenMH( phieuDangKyLopHocPhanMonHocTenMH( phieuDangKy ) );
+        monHocDaDangKyResponse.setSoTinChi( phieuDangKyLopHocPhanMonHocSoTinChi( phieuDangKy ) );
+        monHocDaDangKyResponse.setGioHoc( phieuDangKyLopHocPhanKhungGioHoc( phieuDangKy ) );
+        monHocDaDangKyResponse.setGiangVien( phieuDangKyLopHocPhanGiangVien( phieuDangKy ) );
+        monHocDaDangKyResponse.setTenLop( phieuDangKyLopHocPhanTenLop( phieuDangKy ) );
+        monHocDaDangKyResponse.setPhongHoc( phieuDangKyLopHocPhanPhongHoc( phieuDangKy ) );
 
-        return registeredCourseDTO;
+        return monHocDaDangKyResponse;
     }
 
     @Override
-    public List<PhieuDangKyResponse.RegisteredCourseDTO> toRegisteredCourseDTOList(List<PhieuDangKy> phieuDangKyList) {
+    public List<PhieuDangKyResponse.MonHocDaDangKyResponse> toMonHocDaDangKyResponseList(List<PhieuDangKy> phieuDangKyList) {
         if ( phieuDangKyList == null ) {
             return null;
         }
 
-        List<PhieuDangKyResponse.RegisteredCourseDTO> list = new ArrayList<PhieuDangKyResponse.RegisteredCourseDTO>( phieuDangKyList.size() );
+        List<PhieuDangKyResponse.MonHocDaDangKyResponse> list = new ArrayList<PhieuDangKyResponse.MonHocDaDangKyResponse>( phieuDangKyList.size() );
         for ( PhieuDangKy phieuDangKy : phieuDangKyList ) {
-            list.add( toRegisteredCourseDTO( phieuDangKy ) );
+            list.add( toMonHocDaDangKyResponse( phieuDangKy ) );
         }
 
         return list;
     }
 
     @Override
-    public PhieuDangKy toEntity(DangKyRequest request) {
-        if ( request == null ) {
+    public PhieuDangKyResponse toPhieuDangKyResponseBase(SinhVien sinhVien) {
+        if ( sinhVien == null ) {
             return null;
         }
 
-        PhieuDangKy phieuDangKy = new PhieuDangKy();
+        PhieuDangKyResponse phieuDangKyResponse = new PhieuDangKyResponse();
 
-        phieuDangKy.setHocKy( request.getHocKy() );
+        phieuDangKyResponse.setMaSV( sinhVien.getMaSV() );
+        phieuDangKyResponse.setTenSV( sinhVien.getTen() );
+        phieuDangKyResponse.setKhoaHoc( sinhVien.getKhoa() );
 
-        return phieuDangKy;
-    }
-
-    @Override
-    public void update(PhieuDangKy entity, DangKyRequest request) {
-        if ( request == null ) {
-            return;
-        }
-
-        entity.setHocKy( request.getHocKy() );
+        return phieuDangKyResponse;
     }
 
     private String phieuDangKyLopHocPhanMonHocMaMH(PhieuDangKy phieuDangKy) {

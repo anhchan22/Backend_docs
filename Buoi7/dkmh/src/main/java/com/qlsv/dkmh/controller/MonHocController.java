@@ -6,6 +6,7 @@ import com.qlsv.dkmh.dto.response.MonHocResponse;
 import com.qlsv.dkmh.service.MonHocService;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -20,6 +21,7 @@ public class MonHocController {
 
     //     Lấy tất cả môn học trong hệ thống.
     @GetMapping("tat-ca-mon-hoc")
+    @PreAuthorize("hasRole('ADMIN')")
     public ApiResponse<List<MonHocResponse>> getAllMonHoc() {
         return ApiResponse.<List<MonHocResponse>>builder()
                 .code(1000)
@@ -38,7 +40,7 @@ public class MonHocController {
                 .build();
     }
 
-
+    @PreAuthorize("hasRole('ADMIN')")
     @PostMapping
     public ApiResponse<MonHocResponse> createMonHoc(@Valid @RequestBody MonHocRequest request) {
         return ApiResponse.<MonHocResponse>builder()
