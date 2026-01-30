@@ -15,13 +15,4 @@ public class MonHocRequest {
      String maMH;
      String tenMH;
      int soTinChi;
-
-    // Phương thức static để chuyển đổi từ Entity sang DTO
-    public static MonHocResponse from(MonHoc mh) {
-        return new MonHocResponse(
-                mh.getMaMH(),
-                mh.getTenMH(),
-                mh.getSoTinChi()
-        );
-    }
 }

@@ -7,6 +7,7 @@ import com.qlsv.dkmh.dto.response.DraftResponse;
 import com.qlsv.dkmh.dto.response.PhieuDangKyResponse;
 import com.qlsv.dkmh.service.RegistrationService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
 
@@ -17,12 +18,14 @@ public class RegistrationController {
     @Autowired
     private RegistrationService registrationService;
 
-//     Lấy phiếu đăng ký (kết quả đã lưu) của sinh viên.
-//     GET http://localhost:8080/api/dang-ky/SV001/2025-1
-    @GetMapping("/{maSV}/{hocKy}")
-    public ApiResponse<PhieuDangKyResponse> getPhieuDangKy(
-            @PathVariable String maSV,
-            @PathVariable String hocKy) {
+    // Lấy phiếu đăng ký (kết quả đã lưu) của sinh viên hiện tại.
+    // GET http://localhost:8080/api/dang-ky/2025-1
+    @GetMapping("/{hocKy}")
+    public ApiResponse<PhieuDangKyResponse> getPhieuDangKy(@PathVariable String hocKy) {
+
+        var authentication = SecurityContextHolder.getContext().getAuthentication();
+        String maSV = authentication.getName();
+
         return ApiResponse.<PhieuDangKyResponse>builder()
                 .code(1000)
                 .message("Lấy phiếu đăng ký thành công")
@@ -31,12 +34,14 @@ public class RegistrationController {
     }
 
 
-//     XÓA toàn bộ phiếu đăng ký của sinh viên trong học kỳ
-//     DELETE http://localhost:8080/api/dang-ky/SV001/2025-1
-    @DeleteMapping("/{maSV}/{hocKy}")
-    public ApiResponse<String> deletePhieuDangKy(
-            @PathVariable String maSV,
-            @PathVariable String hocKy) {
+    // XÓA toàn bộ phiếu đăng ký của sinh viên hiện tại trong học kỳ
+    // DELETE http://localhost:8080/api/dang-ky/2025-1
+    @DeleteMapping("/{hocKy}")
+    public ApiResponse<String> deletePhieuDangKy(@PathVariable String hocKy) {
+
+        var authentication = SecurityContextHolder.getContext().getAuthentication();
+        String maSV = authentication.getName();
+
         return ApiResponse.<String>builder()
                 .code(1000)
                 .message("Xóa phiếu đăng ký thành công")
@@ -46,12 +51,14 @@ public class RegistrationController {
 
 
 
-//     LẤY draft hiện tại (danh sách lớp đã chọn nhưng chưa nộp)
-//     GET http://localhost:8080/api/dang-ky/draft/SV001/2025-1
-    @GetMapping("/draft/{maSV}/{hocKy}")
-    public ApiResponse<DraftResponse> getDraft(
-            @PathVariable String maSV,
-            @PathVariable String hocKy) {
+    // LẤY draft hiện tại (danh sách lớp đã chọn nhưng chưa nộp) của sinh viên hiện tại
+    // GET http://localhost:8080/api/dang-ky/draft/2025-1
+    @GetMapping("/draft/{hocKy}")
+    public ApiResponse<DraftResponse> getDraft(@PathVariable String hocKy) {
+
+        var authentication = SecurityContextHolder.getContext().getAuthentication();
+        String maSV = authentication.getName();
+
         return ApiResponse.<DraftResponse>builder()
                 .code(1000)
                 .message("Lấy draft thành công")
@@ -59,46 +66,58 @@ public class RegistrationController {
                 .build();
     }
 
-//     THÊM một lớp học phần vào draft (check xung đột thời gian)
-//     POST http://localhost:8080/api/dang-ky/draft/add
-//     Body: {
-//        "maSV": "SV001",
-//        "hocKy": "2025-1",
-//        "maLop": "IT1110-01"
-//     }
+    // THÊM một lớp học phần vào draft (check xung đột thời gian) của sinh viên hiện tại
+    // POST http://localhost:8080/api/dang-ky/draft/add
+    // Body: {
+    //    "hocKy": "2025-1",
+    //    "maLop": "IT1110-01"
+    // }
     @PostMapping("/draft/add")
     public ApiResponse<DraftResponse> addToDraft(@RequestBody ThemLopVaoDraftRequest request) {
+
+        var authentication = SecurityContextHolder.getContext().getAuthentication();
+        String maSV = authentication.getName();
+
         return ApiResponse.<DraftResponse>builder()
                 .code(1000)
                 .message("Thêm lớp vào draft thành công")
-                .result(registrationService.addToDraft(request.getMaSV(), request.getHocKy(), request.getMaLop()))
+                .result(registrationService.addToDraft(maSV, request.getHocKy(), request.getMaLop()))
                 .build();
     }
 
-//     XÓA một lớp khỏi draft
-//     DELETE http://localhost:8080/api/dang-ky/draft/remove
-//     Body: {
-//        "maSV": "SV001",
-//        "hocKy": "2025-1",
-//        "maLop": "IT1110-01"
-//     }
+    // XÓA một lớp khỏi draft của sinh viên hiện tại
+    // DELETE http://localhost:8080/api/dang-ky/draft/remove
+    // Body: {
+    //    "hocKy": "2025-1",
+    //    "maLop": "IT1110-01"
+    // }
     @DeleteMapping("/draft/remove")
     public ApiResponse<DraftResponse> removeFromDraft(@RequestBody ThemLopVaoDraftRequest request) {
+
+        var authentication = SecurityContextHolder.getContext().getAuthentication();
+        String maSV = authentication.getName();
+
         return ApiResponse.<DraftResponse>builder()
                 .code(1000)
                 .message("Xóa lớp khỏi draft thành công")
-                .result(registrationService.removeFromDraft(request.getMaSV(), request.getHocKy(), request.getMaLop()))
+                .result(registrationService.removeFromDraft(maSV, request.getHocKy(), request.getMaLop()))
                 .build();
     }
 
-//     NỘP phiếu đăng ký (lưu draft vào database, check tín chỉ 10-15)
-//     POST http://localhost:8080/api/dang-ky/draft/submit
-//     Body: {
-//        "maSV": "SV001",
-//        "hocKy": "2025-1"
-//     }
+    // NỘP phiếu đăng ký (lưu draft vào database, check tín chỉ 10-15) của sinh viên hiện tại
+    // POST http://localhost:8080/api/dang-ky/draft/submit
+    // Body: {
+    //    "hocKy": "2025-1"
+    // }
     @PostMapping("/draft/submit")
     public ApiResponse<PhieuDangKyResponse> submitDraft(@RequestBody NopPhieuDangKyRequest request) {
+        // Lấy maSV từ JWT token
+        var authentication = SecurityContextHolder.getContext().getAuthentication();
+        String maSV = authentication.getName();
+
+        // Set maSV vào request object
+        request.setMaSV(maSV);
+
         return ApiResponse.<PhieuDangKyResponse>builder()
                 .code(1000)
                 .message("Nộp phiếu đăng ký thành công")
